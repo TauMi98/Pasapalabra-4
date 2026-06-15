@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pasapalabra: Horno Túnel</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #0a1931 0%, #000c24 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #fff;
+            text-shadow: 0 0 10px #00d2ff, 0 0 20px #00d2ff, 0 0 30px #00d2ff;
+            margin-bottom: 10px;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            width: 100%;
+            max-width: 1200px;
+            flex-wrap: wrap;
+        }
+
+        .left-panel, .right-panel {
+            flex: 1;
+            min-width: 320px;
+            max-width: 450px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(0, 210, 255, 0.2);
+        }
+
+        .stat-box {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8fa0bc;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        #timer { color: #00d2ff; text-shadow: 0 0 10px rgba(0,210,255,0.5); }
+        #score-correct { color: #2ecc71; text-shadow: 0 0 10px rgba(46,204,113,0.5); }
+        #score-incorrect { color: #e74c3c; text-shadow: 0 0 10px rgba(231,76,60,0.5); }
+
+        .question-box {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 140px;
+            margin-bottom: 20px;
+            border-left: 5px solid #00d2ff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .letter-indicator {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00d2ff;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            line-height: 1.5;
+            color: #e2e8f0;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #23395d 0%, #152238 100%);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 210, 255, 0.3);
+            border-color: #00d2ff;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .btn-pasapalabra {
+            background: linear-gradient(135deg, #f39c12 0%, #d35400 100%);
+        }
+        .btn-pasapalabra:hover {
+            box-shadow: 0 5px 15px rgba(243, 156, 18, 0.4);
+            border-color: #f39c12;
+        }
+
+        .btn-voice {
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+        }
+        .btn-voice.active {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            animation: pulse-border 1.5s infinite;
+        }
+
+        .btn-record {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+        .btn-record.recording {
+            animation: pulse-bg 1.5s infinite;
+        }
+
+        .rec-indicator {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 0.9rem;
+            justify-content: center;
+            margin-top: 5px;
+        }
+
+        .rec-indicator.active {
+            display: flex;
+        }
+
+        .rec-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #e74c3c;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+
+        /* El Rosco */
+        .rosco-container {
+            position: relative;
+            width: 460px;
+            height: 460px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .rosco-wheel {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+
+        .rosco-letter {
+            position: absolute;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0052d4 0%, #4364f7 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            user-select: none;
+            z-index: 10;
+        }
+
+        .rosco-letter.current {
+            background: linear-gradient(135deg, #ff9900 0%, #ff5500 100%);
+            transform: scale(1.25);
+            box-shadow: 0 0 15px #ff9900;
+            z-index: 20;
+        }
+
+        .rosco-letter.correct {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            box-shadow: 0 0 10px #38ef7d;
+        }
+
+        .rosco-letter.incorrect {
+            background: linear-gradient(135deg, #cb2d3e 0%, #ef473a 100%);
+            box-shadow: 0 0 10px #ef473a;
+        }
+
+        .center-camera {
+            position: absolute;
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 6px solid #00d2ff;
+            box-shadow: 0 0 25px rgba(0, 210, 255, 0.4);
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+        }
+
+        #webcam {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .cam-placeholder {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.85rem;
+            color: #8fa0bc;
+        }
+
+        .live-transcript {
+            margin-top: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+            font-style: italic;
+            min-height: 40px;
+            font-size: 0.95rem;
+            color: #00d2ff;
+            border: 1px dashed rgba(0, 210, 255, 0.3);
+            text-align: center;
+        }
+
+        /* Pantallas Flotantes / Modales integrados */
+        .modal-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 12, 28, 0.95);
+            backdrop-filter: blur(15px);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            padding: 20px;
+        }
+
+        .modal-screen.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid #00d2ff;
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0, 210, 255, 0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h2 {
+            font-size: 2.2rem;
+            color: #fff;
+            text-shadow: 0 0 10px #00d2ff;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+        }
+
+        .final-results-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .result-card {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .result-card .num {
+            font-size: 2rem;
+            font-weight: bold;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .history-section {
+            margin-top: 30px;
+            text-align: left;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 20px;
+        }
+
+        .history-section h3 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #8fa0bc;
+            text-transform: uppercase;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .history-table th, .history-table td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .history-table th {
+            color: #00d2ff;
+            font-weight: 600;
+        }
+
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); }
+            70% { box-shadow: 0 0 0 12px rgba(46, 204, 113, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+        }
+
+        @keyframes pulse-bg {
+            0% { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+            50% { background: linear-gradient(135deg, #ff4c3c 0%, #e74c3c 100%); box-shadow: 0 0 15px #e74c3c; }
+            100% { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        @media (max-width: 992px) {
+            .game-container {
+                flex-direction: column;
+            }
+            .rosco-container {
+                width: 380px;
+                height: 380px;
+                order: -1;
+            }
+            .center-camera {
+                width: 210px;
+                height: 210px;
+            }
+            .rosco-letter {
+                width: 30px;
+                height: 30px;
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Pasapalabra: Horno Túnel</h1>
+    </header>
+
+    <div class="game-container">
+        <div class="left-panel">
+            <div class="stats-container">
+                <div class="stat-box">
+                    <div class="stat-label">Tiempo</div>
+                    <div class="stat-value" id="timer">05:00</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Aciertos</div>
+                    <div class="stat-value" id="score-correct">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Errores</div>
+                    <div class="stat-value" id="score-incorrect">0</div>
+                </div>
+            </div>
+
+            <div class="question-box">
+                <div class="letter-indicator" id="current-letter-label">Cargando partida...</div>
+                <div class="question-text" id="current-question-text">Presiona el botón inferior para iniciar.</div>
+            </div>
+
+            <div class="live-transcript" id="transcript-box">Voz desactivada. Pulsa "Activar Voz" para empezar a escuchar.</div>
+
+            <div class="controls" style="margin-top:15px;">
+                <button class="btn btn-pasapalabra" id="btn-pasapalabra" disabled>Pasapalabra</button>
+                <button class="btn btn-voice" id="btn-voice">Activar Voz</button>
+            </div>
+        </div>
+
+        <div class="rosco-container">
+            <div class="rosco-wheel" id="rosco-wheel"></div>
+            <div class="center-camera">
+                <video id="webcam" autoplay playsinline muted></video>
+                <div class="cam-placeholder" id="cam-placeholder">Cargando cámara...</div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div style="margin-bottom: 15px; text-align: center; font-weight: bold; color: #8fa0bc; text-transform: uppercase; font-size: 0.9rem;">
+                Grabación de Partida
+            </div>
+            <div class="controls">
+                <button class="btn btn-record" id="btn-start-record">Iniciar Grabación</button>
+                <button class="btn" id="btn-stop-record" disabled style="background: #34495e;">Detener Grabación</button>
+            </div>
+            <div class="rec-indicator" id="rec-indicator">
+                <div class="rec-dot"></div>
+                <span>🔴 REC</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pantalla Inicial / Configuración -->
+    <div class="modal-screen active" id="start-screen">
+        <div class="modal-content">
+            <h2>Pasapalabra Industrial</h2>
+            <p style="margin-bottom: 25px; color: #cbd5e1; line-height: 1.6;">
+                Bienvenido al juego interactivo de Pasapalabra sobre el <strong>Horno Túnel</strong>. Podrás responder utilizando tu voz. Asegúrate de dar permisos de micrófono y cámara.
+            </p>
+            <button class="btn" id="btn-start-game" style="background: linear-gradient(135deg, #00d2ff 0%, #0066ff 100%); width: 100%; padding: 18px;">Comenzar Desafío</button>
+        </div>
+    </div>
+
+    <!-- Pantalla Final -->
+    <div class="modal-screen" id="end-screen">
+        <div class="modal-content">
+            <h2>Juego Terminado</h2>
+            <div class="final-results-grid">
+                <div class="result-card" style="border-color: #2ecc71;">
+                    <span class="stat-label">Aciertos</span>
+                    <span class="num" id="final-correct" style="color: #2ecc71;">0</span>
+                </div>
+                <div class="result-card" style="border-color: #e74c3c;">
+                    <span class="stat-label">Errores</span>
+                    <span class="num" id="final-incorrect" style="color: #e74c3c;">0</span>
+                </div>
+                <div class="result-card" style="border-color: #00d2ff;">
+                    <span class="stat-label">Efectividad</span>
+                    <span class="num" id="final-efficiency" style="color: #00d2ff;">0%</span>
+                </div>
+            </div>
+
+            <button class="btn" id="btn-restart" style="background: linear-gradient(135deg, #00d2ff 0%, #0066ff 100%); width: 100%; margin-bottom: 20px;">Jugar Nuevamente</button>
+
+            <div class="history-section">
+                <h3>Historial de Partidas</h3>
+                <div style="overflow-x: auto;">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Aciertos</th>
+                                <th>Errores</th>
+                                <th>Efectividad</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-tbody">
+                            <!-- Filas dinámicas -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dataset = [
+            { letter: "A", type: "Empieza con A", text: "Acción que realiza la cinta para mover los productos dentro del horno.", answers: ["avance"] },
+            { letter: "B", type: "Empieza con B", text: "Producto de panificación que puede elaborarse en horno túnel.", answers: ["bizcocho"] },
+            { letter: "C", type: "Empieza con C", text: "Elemento que transporta los productos a través del horno.", answers: ["cinta", "cinta de transporte", "cinta transportadora"] },
+            { letter: "D", type: "Contiene la D", text: "Reacción química de oscurecimiento no enzimático que le da el color dorado y el sabor característico a la corteza del pan.", answers: ["maillard", "mayar"] },
+            { letter: "E", type: "Empieza con E", text: "Magnitud física que se transfiere al alimento durante el horneado.", answers: ["energia"] },
+            { letter: "F", type: "Empieza con F", text: "Etapa industrial en la que se elaboran productos alimenticios.", answers: ["fabricacion"] },
+            { letter: "G", type: "Empieza con G", text: "Producto de panificación muy elaborado en hornos túnel.", answers: ["galletita"] },
+            { letter: "H", type: "Empieza con H", text: "Proceso principal que realiza este equipo.", answers: ["horneado"] },
+            { letter: "I", type: "Empieza con I", text: "Sector donde se utiliza ampliamente este horno.", answers: ["industria"] },
+            { letter: "J", type: "Contiene la J", text: "Acción de unir partes o componentes de la estructura metálica.", answers: ["ensamblaje"] },
+            { letter: "K", type: "Empieza con K", text: "Unidad utilizada para medir temperaturas absolutas en ingeniería.", answers: ["kelvin"] },
+            { letter: "L", type: "Empieza con L", text: "Lugar donde se instala el horno dentro de una fábrica.", answers: ["linea de produccion", "linea"] },
+            { letter: "M", type: "Empieza con M", text: "Actividad necesaria para conservar el correcto funcionamiento del horno.", answers: ["mantenimiento"] },
+            { letter: "N", type: "Empieza con N", text: "Proceso de transferencia térmica donde el aire caliente sube y el frío baja generando corrientes dentro del horno.", answers: ["conveccion"] },
+            { letter: "Ñ", type: "Contiene la Ñ", text: "Acción de diseñar o proyectar un equipo industrial.", answers: ["diseno"] },
+            { letter: "O", type: "Contiene la O", text: "Tipo de equipo estudiado en la exposición.", answers: ["horno"] },
+            { letter: "P", type: "Empieza con P", text: "Sistema de trabajo característico del horno túnel.", answers: ["produccion continua", "produccion"] },
+            { letter: "Q", type: "Empieza con Q", text: "El corazón de los hornos a gas; se encarga de realizar la combustión para generar calor.", answers: ["quemador"] },
+            { letter: "R", type: "Empieza con R", text: "Tipo de transferencia de calor emitida por superficies calientes.", answers: ["radiacion"] },
+            { letter: "S", type: "Empieza con S", text: "Sistema encargado de controlar el funcionamiento del equipo.", answers: ["sensores"] },
+            { letter: "T", type: "Empieza con T", text: "Nombre del horno estudiado.", answers: ["tunel"] },
+            { letter: "U", type: "Empieza con U", text: "Característica de la cocción en este tipo de horno.", answers: ["uniformidad"] },
+            { letter: "V", type: "Empieza con V", text: "Movimiento que favorece la circulación del aire caliente.", answers: ["ventilacion"] },
+            { letter: "W", type: "Empieza con W", text: "Unidad de potencia utilizada para expresar la energía de equipos eléctricos.", answers: ["watt"] },
+            { letter: "X", type: "Empieza con X", text: "Operación industrial donde se mezclan y transforman ingredientes mediante un tornillo.", answers: ["extrusion"] },
+            { letter: "Y", type: "Empieza con Y", text: "Parte del huevo utilizada para pintar las facturas antes del horneado.", answers: ["yema"] },
+            { letter: "Z", type: "Empieza con Z", text: "Sector del horno túnel por donde ingresa la masa cruda para comenzar su recorrido.", answers: ["zona de carga", "carga"] }
+        ];
+
+        // Estado del Juego
+        let currentIndex = 0;
+        let states = []; // 0: azul, 1: verde, 2: rojo
+        let totalSeconds = 300;
+        let timerInterval = null;
+        let gameActive = false;
+        let voiceActive = false;
+
+        // Web Audio api sintetizada para efectos sonoros analógicos (sin necesidad de archivos externos)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'incorrect') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(80, audioCtx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.4);
+            }
+        }
+
+        // Configuración de Reconocimiento de Voz y Síntesis
+        let recognition = null;
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = false;
+            recognition.lang = 'es-ES';
+        }
+
+        const synth = window.speechSynthesis;
+
+        // MediaRecorder para Grabación
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let streamMaster = null;
+
+        // Referencias DOM
+        const roscoWheel = document.getElementById('rosco-wheel');
+        const timerEl = document.getElementById('timer');
+        const correctEl = document.getElementById('score-correct');
+        const incorrectEl = document.getElementById('score-incorrect');
+        const currentLetterLabel = document.getElementById('current-letter-label');
+        const currentQuestionText = document.getElementById('current-question-text');
+        const transcriptBox = document.getElementById('transcript-box');
+        const btnPasapalabra = document.getElementById('btn-pasapalabra');
+        const btnVoice = document.getElementById('btn-voice');
+        const btnStartRecord = document.getElementById('btn-start-record');
+        const btnStopRecord = document.getElementById('btn-stop-record');
+        const recIndicator = document.getElementById('rec-indicator');
+        const startScreen = document.getElementById('start-screen');
+        const endScreen = document.getElementById('end-screen');
+        const webcamEl = document.getElementById('webcam');
+        const camPlaceholder = document.getElementById('cam-placeholder');
+
+        // Generación del Rosco Circular
+        function buildRosco() {
+            roscoWheel.innerHTML = '';
+            const totalLetters = dataset.length;
+            const radius = 200; // Radio de la distribución
+            const centerOffset = 212; // Mitad del contenedor aproximado (460/2 - 36/2)
+
+            dataset.forEach((item, index) => {
+                const angle = (index * 2 * Math.PI / totalLetters) - Math.PI / 2;
+                const x = centerOffset + radius * Math.cos(angle);
+                const y = centerOffset + radius * Math.sin(angle);
+
+                const letterEl = document.createElement('div');
+                letterEl.classList.add('rosco-letter');
+                letterEl.id = `letter-${index}`;
+                letterEl.innerText = item.letter;
+                letterEl.style.left = `${x}px`;
+                letterEl.style.top = `${y}px`;
+                roscoWheel.appendChild(letterEl);
+                states.push(0); // Inicializar en azul
+            });
+        }
+
+        // Inicialización de Recursos de Video/Cámara
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                webcamEl.srcObject = stream;
+                streamMaster = stream;
+                camPlaceholder.style.display = 'none';
+            } catch (err) {
+                console.error("Error al acceder a la cámara/micrófono:", err);
+                camPlaceholder.innerText = "Cámara no disponible / Permiso denegado";
+            }
+        }
+
+        // Algoritmia de Normalización y Similitud (Levenshtein)
+        function cleanString(str) {
+            return str ? str.toLowerCase()
+                .normalize("NFD")
+                .replace(/[̀-ͯ]/g, "")
+                .trim()
+                .replace(/\s+/g, " ") : "";
+        }
+
+        function levenshteinDistance(a, b) {
+            const matrix = [];
+            for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+            for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+            for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                    if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j] + 1
+                        );
+                    }
+                }
+            }
+            return matrix[b.length][a.length];
+        }
+
+        function getSimilarity(s1, s2) {
+            const clean1 = cleanString(s1);
+            const clean2 = cleanString(s2);
+            if (clean1 === clean2) return 1.0;
+            
+            const distance = levenshteinDistance(clean1, clean2);
+            const maxLength = Math.max(clean1.length, clean2.length);
+            if (maxLength === 0) return 1.0;
+            return 1.0 - (distance / maxLength);
+        }
+
+        function checkAnswerMatch(userInput, acceptableAnswers) {
+            for (let ans of acceptableAnswers) {
+                if (getSimilarity(userInput, ans) >= 0.8) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Control de Turnos y Flujo de Preguntas
+        function speakQuestion(text, callback) {
+            if (synth.speaking) synth.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'es-ES';
+            
+            // Preferir voz femenina si existe
+            const voices = synth.getVoices();
+            const femaleVoice = voices.find(v => v.lang.includes('es') && (v.name.toLowerCase().includes('google') || v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('helena') || v.name.toLowerCase().includes('zira')));
+            if (femaleVoice) utterance.voice = femaleVoice;
+
+            utterance.onend = () => {
+                if (callback) callback();
+            };
+            synth.speak(utterance);
+        }
+
+        function speakFeedback(text, callback) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'es-ES';
+            utterance.onend = () => { if (callback) callback(); };
+            synth.speak(utterance);
+        }
+
+        function updateRoscoUI() {
+            dataset.forEach((_, index) => {
+                const el = document.getElementById(`letter-${index}`);
+                el.className = 'rosco-letter';
+                if (index === currentIndex && gameActive) {
+                    el.classList.add('current');
+                } else if (states[index] === 1) {
+                    el.classList.add('correct');
+                } else if (states[index] === 2) {
+                    el.classList.add('incorrect');
+                }
+            });
+
+            const correctCount = states.filter(s => s === 1).length;
+            const incorrectCount = states.filter(s => s === 2).length;
+            correctEl.innerText = correctCount;
+            incorrectEl.innerText = incorrectCount;
+        }
+
+        function nextTurn() {
+            if (!gameActive) return;
+
+            // Verificar si quedan letras pendientes
+            const unansweredIndices = states.map((s, i) => s === 0 ? i : -1).filter(i => i !== -1);
+            
+            if (unansweredIndices.length === 0) {
+                endGame();
+                return;
+            }
+
+            // Si el índice actual ya no está pendiente, buscar el siguiente disponible hacia adelante circularmente
+            if (states[currentIndex] !== 0) {
+                let found = false;
+                for (let i = 1; i <= dataset.length; i++) {
+                    let nextCheck = (currentIndex + i) % dataset.length;
+                    if (states[nextCheck] === 0) {
+                        currentIndex = nextCheck;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    endGame();
+                    return;
+                }
+            }
+
+            updateRoscoUI();
+
+            const currentData = dataset[currentIndex];
+            currentLetterLabel.innerText = `${currentData.type}:`;
+            currentQuestionText.innerText = currentData.text;
+
+            // Pausar temporalmente escucha de voz durante la lectura para evitar auto-retroalimentación
+            if (recognition && voiceActive) {
+                recognition.abort();
+            }
+
+            speakQuestion(`${currentData.type}. ${currentData.text}`, () => {
+                if (recognition && voiceActive && gameActive) {
+                    try { recognition.start(); } catch(e){}
+                }
+            });
+        }
+
+        function processUserResponse(text) {
+            const currentData = dataset[currentIndex];
+            const isCorrect = checkAnswerMatch(text, currentData.answers);
+
+            if (isCorrect) {
+                states[currentIndex] = 1;
+                playSound('correct');
+                speakFeedback("Correcto", () => { nextTurn(); });
+            } else {
+                states[currentIndex] = 2;
+                playSound('incorrect');
+                speakFeedback("Incorrecto", () => { nextTurn(); });
+            }
+        }
+
+        function passTurn() {
+            if (!gameActive) return;
+            
+            // Buscar la siguiente letra pendiente
+            let nextCheck = currentIndex;
+            let found = false;
+            for (let i = 1; i <= dataset.length; i++) {
+                let idx = (currentIndex + i) % dataset.length;
+                if (states[idx] === 0) {
+                    nextCheck = idx;
+                    found = true;
+                    break;
+                }
+            }
+            
+            currentIndex = nextCheck;
+            nextTurn();
+        }
+
+        // Cronómetro
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                totalSeconds--;
+                if (totalSeconds <= 0) {
+                    totalSeconds = 0;
+                    endGame();
+                }
+                
+                const mins = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+                const secs = String(totalSeconds % 60).padStart(2, '0');
+                timerEl.innerText = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        // Inicialización y Finalización de Partida
+        function startGame() {
+            gameActive = true;
+            currentIndex = 0;
+            states = states.map(() => 0);
+            totalSeconds = 300;
+            timerEl.innerText = "05:00";
+            
+            btnPasapalabra.disabled = false;
+            startScreen.classList.remove('active');
+            endScreen.classList.remove('active');
+            
+            startTimer();
+            nextTurn();
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(timerInterval);
+            if (synth.speaking) synth.cancel();
+            if (recognition) recognition.abort();
+
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                stopRecording();
+            }
+
+            btnPasapalabra.disabled = true;
+
+            const correctCount = states.filter(s => s === 1).length;
+            const incorrectCount = states.filter(s => s === 2).length;
+            const totalAnswered = correctCount + incorrectCount;
+            const efficiency = totalAnswered > 0 ? Math.round((correctCount / dataset.length) * 100) : 0;
+
+            document.getElementById('final-correct').innerText = correctCount;
+            document.getElementById('final-incorrect').innerText = incorrectCount;
+            document.getElementById('final-efficiency').innerText = `${efficiency}%`;
+
+            // Guardar Resultados en localStorage
+            const history = JSON.parse(localStorage.getItem('pasapalabra_history') || '[]');
+            const newRecord = {
+                date: new Date().toLocaleString(),
+                correct: correctCount,
+                incorrect: incorrectCount,
+                efficiency: `${efficiency}%`
+            };
+            history.push(newRecord);
+            localStorage.setItem('pasapalabra_history', JSON.stringify(history));
+
+            renderHistory();
+            endScreen.classList.add('active');
+        }
+
+        function renderHistory() {
+            const history = JSON.parse(localStorage.getItem('pasapalabra_history') || '[]');
+            const tbody = document.getElementById('history-tbody');
+            tbody.innerHTML = '';
+            
+            history.reverse().forEach(run => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${run.date}</td>
+                    <td style="color:#2ecc71; font-weight:bold;">${run.correct}</td>
+                    <td style="color:#e74c3c; font-weight:bold;">${run.incorrect}</td>
+                    <td style="color:#00d2ff; font-weight:bold;">${run.efficiency}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Setup Grabador Multimedia (MediaRecorder)
+        function startRecording() {
+            if (!streamMaster) {
+                alert("No se puede grabar porque no hay acceso a la cámara o micrófono.");
+                return;
+            }
+            recordedChunks = [];
+            mediaRecorder = new MediaRecorder(streamMaster, { mimeType: 'video/webm;codecs=vp8,opus' });
+            
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) recordedChunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                
+                const now = new Date();
+                const timestamp = now.getFullYear() +
+                    String(now.getMonth()+1).padStart(2,'0') +
+                    String(now.getDate()).padStart(2,'0') + "_" +
+                    String(now.getHours()).padStart(2,'0') +
+                    String(now.getMinutes()).padStart(2,'0');
+                
+                a.download = `pasapalabra_horno_tunel_${timestamp}.webm`;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }, 100);
+            };
+
+            mediaRecorder.start();
+            btnStartRecord.disabled = true;
+            btnStopRecord.disabled = false;
+            recIndicator.classList.add('active');
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            btnStartRecord.disabled = false;
+            btnStopRecord.disabled = true;
+            recIndicator.classList.remove('active');
+        }
+
+        // Configuración de Eventos de Voz Continuos
+        if (recognition) {
+            recognition.onresult = (event) => {
+                const resultIndex = event.resultIndex;
+                const transcript = event.results[resultIndex][0].transcript;
+                transcriptBox.innerText = `Escuchado: "${transcript}"`;
+                
+                // Procesar respuesta detectada si el juego sigue activo
+                if (gameActive) {
+                    processUserResponse(transcript);
+                }
+            };
+
+            recognition.onend = () => {
+                // Reiniciar automáticamente si el reconocimiento se detiene y la voz sigue activa globalmente
+                if (voiceActive && gameActive && !synth.speaking) {
+                    try { recognition.start(); } catch(e){}
+                }
+            };
+
+            recognition.onerror = (err) => {
+                console.error("Error en Speech Recognition:", err.error);
+            };
+        }
+
+        // Manejadores de Eventos del DOM
+        btnVoice.addEventListener('click', () => {
+            if (!recognition) {
+                alert("Web Speech API no está soportada en este navegador. Usa Chrome o Edge.");
+                return;
+            }
+            if (!voiceActive) {
+                voiceActive = true;
+                btnVoice.classList.add('active');
+                btnVoice.innerText = "Voz Activada";
+                transcriptBox.innerText = "Escuchando de forma continua...";
+                if (gameActive && !synth.speaking) {
+                    try { recognition.start(); } catch(e){}
+                }
+            } else {
+                voiceActive = false;
+                btnVoice.classList.remove('active');
+                btnVoice.innerText = "Activar Voz";
+                transcriptBox.innerText = "Voz desactivada.";
+                recognition.abort();
+            }
+        });
+
+        btnPasapalabra.addEventListener('click', passTurn);
+        btnStartGame.addEventListener('click', startGame);
+        btnRestart.addEventListener('click', startGame);
+        btnStartRecord.addEventListener('click', startRecording);
+        btnStopRecord.addEventListener('click', stopRecording);
+
+        // Inicialización General al cargar ventana
+        window.addEventListener('load', () => {
+            buildRosco();
+            initCamera();
+            // Asegurar que las voces carguen correctamente en navegadores basados en WebKit
+            if (window.speechSynthesis.onvoiceschanged !== undefined) {
+                window.speechSynthesis.onvoiceschanged = () => synth.getVoices();
+            }
+        });
+    </script>
+</body>
+</html>
